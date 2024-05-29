@@ -22,23 +22,20 @@ app.get('/filteredimage', async (rq, rs) => {
   }
   // 1. validate the image_url query
   if (imageUrl && isValidUrl(imageUrl)) {
-    fetch(imageUrl).then((res) => {
+    fetch(imageUrl).then(async (res) => {
       if (res.ok) {
-        // 2. call filterImageFromURL(image_url) to filter the image
-        filterImageFromURL(imageUrl).then((path) => {
-          if (path) {
-            // 3. send the resulting file in the response
-            return rs.status(200).sendFile(path, (err) => {
-              if (!err) {
-                // 4. deletes any files on the server on finish of the response
-                deleteLocalFiles([path]);
-              }
-            });
-          }
-          return rs.status(404).send('image_url not found!');
-        }, (err) => {
-          return rs.status(403).send('can not read image_url!')
-        });
+        let path = await filterImageFromURL(imageUrl);
+        if (path) {
+          // 3. send the resulting file in the response
+          return rs.status(200).sendFile(path, (err) => {
+            if (!err) {
+              // 4. deletes any files on the server on finish of the response
+              deleteLocalFiles([path]);
+            }
+          });
+        } else {
+          return rs.status(422).send('can not process image!');
+        }
       } else {
         return rs.status(404).send(`image_url not found!`);
       }
